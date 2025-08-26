@@ -1,31 +1,11 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import os
-import requests
-
-app = FastAPI()
-
-# Allow CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class RewriteRequest(BaseModel):
-    prompt: str
-    email: str
-    provider: str = "openai"  # "openai", "deepseek", "perplexity"
-
 @app.post("/rewrite")
 async def rewrite_email(req: RewriteRequest):
-    prompt_text = f"""{req.prompt.strip()}"""
+    prompt_text = f"""\
+{req.prompt.strip()}
 
 Email:
-{req.email.strip()}"
+{req.email.strip()}
+"""
 
     try:
         if req.provider == "openai":
