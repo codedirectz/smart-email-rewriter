@@ -22,7 +22,7 @@ class RewriteRequest(BaseModel):
 
 @app.post("/rewrite")
 async def rewrite_email(req: RewriteRequest):
-    prompt_text = f"{req.prompt.strip()}"
+    prompt_text = f"""{req.prompt.strip()}"""
 
 Email:
 {req.email.strip()}"
