@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -6,7 +6,6 @@ import requests
 
 app = FastAPI()
 
-# Allow CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,12 +21,7 @@ class RewriteRequest(BaseModel):
 
 @app.post("/rewrite")
 async def rewrite_email(req: RewriteRequest):
-    prompt_text = f"""\
-{req.prompt.strip()}
-
-Email:
-{req.email.strip()}
-"""
+    prompt_text = f"{req.prompt.strip()}\n\nEmail:\n{req.email.strip()}"
 
     try:
         if req.provider == "openai":
@@ -41,21 +35,15 @@ Email:
                 ]
             }
             response = requests.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            rewritten = response.json()["choices"][0]["message"]["content"]
 
         elif req.provider == "deepseek":
             api_key = os.getenv("DEEPSEEK_API_KEY")
             headers = {"Authorization": f"Bearer {api_key}"}
             payload = {
                 "model": "deepseek-chat",
-                "messages": [
-                    {"role": "user", "content": prompt_text}
-                ]
+                "messages": [{"role": "user", "content": prompt_text}]
             }
             response = requests.post("https://api.deepseek.com/v1/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            rewritten = response.json()["choices"][0]["message"]["content"]
 
         elif req.provider == "perplexity":
             api_key = os.getenv("PERPLEXITY_API_KEY")
@@ -69,12 +57,13 @@ Email:
                 "messages": [{"role": "user", "content": prompt_text}]
             }
             response = requests.post("https://api.perplexity.ai/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            rewritten = response.json()["choices"][0]["message"]["content"]
 
         else:
             return {"error": "Unsupported provider."}
 
+        response.raise_for_status()
+        rewritten = response.json()["choices"][0]["message"]["content"]
         return {"rewritten_email": rewritten.strip()}
+
     except Exception as e:
         return {"error": str(e)}
